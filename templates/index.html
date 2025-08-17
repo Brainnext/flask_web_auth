@@ -1,51 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> {% block title %} My App {% endblock %}</title>
-    <!---- Tailwind cdn for easy styling-->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
-        }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col">
-    <!--- Nav bar -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/" class="flex -shrink-0 text-xl font-bold text-blue-600">
-                        My App
-                    </a>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        {% if current_user.is_authenticated %}
-                        <a href="/dashboard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium">Log out</a>
-                        {% else %}
-                        <a href="/login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Log in</a>
-                        <a href="/signup" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium">Sign up</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+{% extends "base.html" %}
+
+{% block title %} Welcome! {% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center text-center p-4 sm:p-8 md:p-12 lg:p016 w-full"> 
+
+    <!---- Hero Section-->
+    <div class="relative bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-2xl w-full max-w-4xl p-10 sm:p-12 md:p-16 mb-12">
+        <!-- Floating shapes for a fun effect -->
+        <div class="absolute inset-0 overflow-hidden rounded-xl z-0">
+            <div class="absolute -top-10 -left-10 w-48 h-48 bg-white opacity-10 rounded-full animate-pulse-slow"></div>
+            <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full animate-pulse-slow-reverse"></div>
         </div>
-    </nav>
+        <div class="relative z-10 text-white">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4"> Build Something <span class="text-yellow-300">Amazing</span></h1>
+            <p class="text-lg sm:text-xl font-light mb-8"> Your journey starts here. Join a community and create somethimg incredible today! </p>
+            <a href="/signup" class="inline- block bg-white text-blue-600 font-bold text-lg py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-100 "> Get Started</a>
+        </div>
+    </div>
 
-    <!---Main Content -->
-    <main class="flex-grow flex item-center justify-center px-4 mt-20">
-        {% block content %}
-        <h1 class="font-medium text-2xl text-black-500 mt-50" > Welcome to Sirlinux Hub </h1>
-        {% endblock %}
+    <!--- Feature Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+        <!-- Feature Card 1 -->
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center transform transition-all duration-300 hover:scale-105">
+            <div class="mb-4 text-4xl text-blue-500">
+                🚀
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Blazing Fast</h3>
+            <p class="text-gray-600 text-sm">Our platform is optimized for speed, so you can build and deploy in record time.</p>
+        </div>
 
-    </main>
-</body>
-</html>
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center transform transition-all duration-300 hover:scale-105">
+            <div class="mb-4 text-4xl text-blue-500">
+                🎨
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Beautiful Design</h3>
+            <p class="text-gray-600 text-sm">We provide pre-built components and templates to make your app look stunning.</p>
+        </div>
+
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center transform transition-all duration-300 hover:scale-105">
+            <div class="mb-4 text-4xl text-blue-500">
+                 🤝
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Community Support</h3>
+            <p class="text-gray-600 text-sm">Get help from a vibrant community of developers and creators just like you.</p>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
