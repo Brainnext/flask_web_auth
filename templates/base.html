@@ -5,15 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> {% block title %} My App {% endblock %}</title>
     <!---- Tailwind cdn for easy styling-->
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32/1f2937/ffffff?text=APP">
+    <link rel="stylesheet" href="{{url_for('static', filename='/style.css')}}">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
-        }
-    </style>
+
 </head>
 <body class="min-h-screen flex flex-col">
     <!--- Nav bar -->
@@ -25,20 +20,47 @@
                         My App
                     </a>
                 </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        {% if current_user.is_authenticated %}
-                        <a href="/dashboard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium">Log out</a>
-                        {% else %}
-                        <a href="/login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Log in</a>
-                        <a href="/signup" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium">Sign up</a>
-                        {% endif %}
-                    </div>
+            
+                <!-- Mobile Menu -->
+                 <div>
+                    <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
+        <!-- Mobile Menu to show/hide menu state-->
+        <div class="md:hidden" id="mobile-menu" style="display: none;">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                {% if current_user.is_authenticated %}
+                    <a href="/dashboard" class="text-gray-700 hover:bg-gray-200 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+                    <a href="/logout" class="text-gray-700 hover:bg-gray-200 block px-3 py-2 rounded-md text-base font-medium">Log out</a>
+                {% else %}
+                    <a href="/login" class="text-gray-700 hover:bg-gray-200 block px-3 py-2 rounded-md text-base font-medium">Log in</a>
+                    <a href="/signup" class="bg-blue-600 text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">Sign up</a>
+                {% endif %}
+            </div>
+        </div>
     </nav>
+
+    <!-- Flash Messages Section -->
+    <div class="container mx-auto px-4 mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 mb-4 text-sm rounded-lg
+                    {% if category == 'success' %} bg-green-100 text-green-700 {% endif %}
+                    {% if category == 'error' %} bg-red-100 text-red-700 {% endif %}
+                    {% if category == 'info' %} bg-blue-100 text-blue-700 {% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
 
     <!---Main Content -->
     <main class="flex-grow flex item-center justify-center px-4 mt-20">
@@ -47,5 +69,9 @@
         {% endblock %}
 
     </main>
+
+    <script src="{{url_for('static', filename='script.js')}}"> 
+        
+    </script>
 </body>
 </html>

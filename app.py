@@ -1,11 +1,14 @@
 # Import the necessary Flask components and SQLAlchemy
 import os
 import re
+import uuid
+from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, flash, send_from_directory
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
 
 # Loading environment variable from .env file
 load_dotenv()
@@ -26,6 +29,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the SQLAlchemy object with the app.
 db = SQLAlchemy(app)
 
+# Configure a directory for file uploads
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+# Create the uploads folder if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Define allowed file extensions for security
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# Set up Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 # --- User Management with Database ---
 # The User model is a class that represents the 'user' table in our database.
 # UserMixin provides default implementations for Flask-Login's required methods.
@@ -37,14 +56,32 @@ class User(UserMixin, db.Model):
     # 'password_hash' stores the hashed password.
     password_hash = db.Column(db.String(128), nullable=False)
 
+    profile_image_url = db.Column(db.String(255), default='/static/placeholders/user.png')
+    # A relationship to the Note model, linking notes to this user
+    notes = db.relationship('Note', backref='author', lazy=True)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
     def __repr__(self):
         # This is a helpful representation for debugging.
         return f'<User {self.username}>'
 
-# Set up Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+class Note(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.String(50), nullable=False, default=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    # Foreign key linking the note to a user
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    def __repr__(self):
+        return f"Note('{self.content}', '{self.timestamp}')"
+
+@login_manager.user_loader
+def load_user(user_id):
+    # Retrieve user by their unique ID from the database
+    return User.query.get(int(user_id))
+
 
 # This function is required by Flask-Login to load a user from the session.
 # It now queries the database instead of the in-memory dictionary.
@@ -91,6 +128,7 @@ def signup():
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             return render_template ("signup.html" , error_message="Username already exists. Please try another.")
+            
 
         # Create a new User object and set the hashed password
         password_hash = generate_password_hash(password)
@@ -136,7 +174,95 @@ def dashboard():
     """
     Renders the dashboard page for logged-in users.
     """
-    return render_template('dashboard.html', username=current_user.username)
+    return render_template('dashboard.html', username=current_user.username, notes=current_user.notes, profile_image=current_user.profile_image_url)
+
+@app.route('/add_note', methods=['POST'])
+@login_required
+def add_note():
+    note_content = request.form.get('note_content')
+    if note_content:
+        # Create a new Note object and associate it with the current user
+        new_note = Note(content=note_content, author=current_user)
+        # Add the note to the database session and commit
+        db.session.add(new_note)
+        db.session.commit()
+        flash('Note added successfully!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/delete_note', methods=['POST'])
+@login_required
+def delete_note():
+    # Get the note ID from the hidden form input
+    note_id = request.form.get('note_id')
+    # Use get_or_404 to handle cases where the note doesn't exist
+    note = Note.query.get_or_404(note_id)
+
+    # Security check: Ensure the current user is the author of the note
+    if note.user_id != current_user.id:
+        flash('You do not have permission to delete this note.', 'error')
+        abort(403) # Forbidden
+
+    db.session.delete(note)
+    db.session.commit()
+    flash('Note deleted successfully!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/update_name', methods=['POST'])
+@login_required
+def update_name():
+    new_name = request.form.get('new_username')
+    if new_name:
+        # Update the username in the database
+        current_user.username = new_name
+        db.session.commit()
+        flash('Display name updated successfully!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/update_password', methods=['POST'])
+@login_required
+def update_password():
+    new_password = request.form.get('new_password')
+    if new_password:
+        # Update the password hash in the database
+        current_user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash('Password updated successfully!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/upload_file', methods=['POST'])
+@login_required
+def upload_file():
+    # Check if the post request has the file part
+    if 'file' not in request.files:
+        flash('No file part', 'error')
+        return redirect(url_for('dashboard'))
+
+    file = request.files['file']
+    if file.filename == '':
+        flash('No selected file', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Check if the file is allowed
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        unique_filename = f"{uuid.uuid4()}_{filename}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        file.save(file_path)
+
+        # Update the user's profile with the new image URL
+        current_user.profile_image_url = url_for('uploaded_file', filename=unique_filename)
+        db.session.commit()
+        flash('Profile picture uploaded successfully!', 'success')
+    else:
+        flash('Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.', 'error')
+    
+    return redirect(url_for('dashboard'))
+
+# A route to serve uploaded files from the static directory
+@app.route('/static/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 # The logout route
 @app.route('/logout')
