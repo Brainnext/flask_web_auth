@@ -1,0 +1,4 @@
+.env
+instance/
+secret.py
+ __pycache__
