@@ -1,5 +1,6 @@
 # Import the necessary Flask components and SQLAlchemy
 import os
+import re
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, request
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -72,15 +73,29 @@ def signup():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Check if password match
+        if password != confirm_password:
+            return render_template ('signup.html' , error_message="password do not match. Please try again.")
+        
+        # Check for password strength
+        if len(password) < 6 :
+            return render_template ('signup.html', error_message="password must be at least 6 characters")
+        
+        # Check if password contains both letters and numbers using regex
+        if not re.search(r"[a-zA-Z]", password) or not re.search(r"[0-9]", password):
+            return render_template ("signup.html", error_message="Password must be a mix of letters and numbers!")
 
         # Check if the username already exists in the database
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
-            return "Username already exists. Please try another.", 400
+            return render_template ("signup.html" , error_message="Username already exists. Please try another.")
 
         # Create a new User object and set the hashed password
         password_hash = generate_password_hash(password)
         new_user = User(username=username, password_hash=password_hash)
+        
 
         # Add the new user to the database session and commit the changes
         db.session.add(new_user)
@@ -110,7 +125,7 @@ def login():
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
-            return "Login failed. Check your username and password.", 401
+            return render_template ('login.html', error_message="Login failed. Check your username and password.")
 
     return render_template('login.html')
 

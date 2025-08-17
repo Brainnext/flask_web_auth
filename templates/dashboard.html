@@ -3,6 +3,14 @@
 {% block title %} Dashboard {% endblock %}
 
 {% block content %}
+<div class="bg-white px-8 rounded-lg shadow-2xl max-w-2xl w-full h-full min-h-[50vh] text-center mt-10">
+    <h2 class="text-3xl font-bold text-gray-900 mb-4 mt-8"> Welcome, {{ username }}</h2>
+    <p class="text-lg text-gray-600 mb-6"> You have successfully logged in</p>
+    <p class="text-gray-500"> This is your personalized dashboard. You can start building whatever you like on this page!</p>
 
+    <div class="mt-8">
+        <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-md text-base font-medium transition-colors duration-200"> Log out</a>
+    </div>
+</div>
 
 {% endblock %}

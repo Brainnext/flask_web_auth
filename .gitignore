@@ -1,4 +1,4 @@
 .env
 instance/
 secret.py
- __pycache__
+_pycache_
